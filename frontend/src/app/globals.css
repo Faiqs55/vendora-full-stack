@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+    --animate-fill: fill 5s linear forwards;
+
+    @keyframes fill{
+        0%{
+            width: 0%;
+        }
+        100% {
+            width: 100%;
+        }
+    }
+}
