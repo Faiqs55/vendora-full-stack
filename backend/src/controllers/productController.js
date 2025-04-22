@@ -23,21 +23,37 @@ const addProductController = async (req, res) => {
 
 // READ PRODUCTS
 const readProductsController = async (req, res) => {
+  const page = parseInt(req?.query?.page) || 1;
+  const limit = parseInt(req?.query?.limit) || 8;
+  const skip = (page - 1) * limit;
+
   try {
     let products;
     const user = req.user;
-    if (req.user && req.user.role === "vendor") {
-      products = await Product.find({ vendor: user._id }).populate(
+    if (req.user && req.user.role === "vendor") {      
+      const total = await Product.countDocuments({ vendor: user._id });
+      products = await Product.find({ vendor: user._id }).skip(skip).limit(limit).populate(
         "vendor",
         "name email storeName"
       );
       if (products) {
-        return res.status(200).json(products);
+        return res.status(200).json({
+          products,
+          total,
+          page,
+          totalPages: Math.ceil(total/limit)
+        });
       }
     }
-    products = await Product.find().populate("vendor", "name email storeName");
+    const total = await Product.countDocuments();
+    products = await Product.find().skip(skip).limit(limit).populate("vendor", "name email storeName");
 
-    res.json(products);
+    return res.status(200).json({
+      products,
+      total,
+      page,
+      totalPages: Math.ceil(total/limit)
+    });
   } catch (error) {
     res.status(500).json({ msg: error.message });
   }
