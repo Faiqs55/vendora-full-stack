@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 class Products {
   endpoint;
   token;
@@ -71,7 +69,53 @@ class Products {
         };
       }
     } catch (error) {
-      throw new Error(error);
+      return error;
+    }
+  }
+
+  async updateProduct(id, data) {    
+    try {
+      const token = localStorage.getItem("AdminToken");
+      const res = await fetch(`${this.endpoint}/${id}`, {
+        method: "put",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data),
+      });      
+
+      if (res.status === 202) {
+        return await res.json();
+      } else {
+        return {
+          error: await res.json(),
+        };
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async deleteProduct(id) {
+    try {
+      const token = localStorage.getItem("AdminToken");
+      const res = await fetch(`${this.endpoint}/${id}`, {
+        method: "delete",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 202) {
+        return await res.json();
+      } else {
+        return {
+          error: await res.json(),
+        };
+      }
+    } catch (error) {
+      return error;
     }
   }
 }

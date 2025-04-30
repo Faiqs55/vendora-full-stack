@@ -1,11 +1,12 @@
 const { Product } = require("../models/Product");
+const mongoose = require("mongoose");
 
 // ADD PRODUCT
 const addProductController = async (req, res) => {
   try {
     const productData = req.body;
     console.log(req);
-    
+
     const user = req.user;
     if (user.role !== "vendor") {
       return res.status(403).json({ msg: "Only vendors can add products" });
@@ -30,29 +31,32 @@ const readProductsController = async (req, res) => {
   try {
     let products;
     const user = req.user;
-    if (req.user && req.user.role === "vendor") {      
+    if (req.user && req.user.role === "vendor") {
       const total = await Product.countDocuments({ vendor: user._id });
-      products = await Product.find({ vendor: user._id }).skip(skip).limit(limit).populate(
-        "vendor",
-        "name email storeName"
-      );
+      products = await Product.find({ vendor: user._id })
+        .skip(skip)
+        .limit(limit)
+        .populate("vendor", "name email storeName");
       if (products) {
         return res.status(200).json({
           products,
           total,
           page,
-          totalPages: Math.ceil(total/limit)
+          totalPages: Math.ceil(total / limit),
         });
       }
     }
     const total = await Product.countDocuments();
-    products = await Product.find().skip(skip).limit(limit).populate("vendor", "name email storeName");
+    products = await Product.find()
+      .skip(skip)
+      .limit(limit)
+      .populate("vendor", "name email storeName");
 
     return res.status(200).json({
       products,
       total,
       page,
-      totalPages: Math.ceil(total/limit)
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     res.status(500).json({ msg: error.message });
@@ -64,8 +68,13 @@ const readSingleProductController = async (req, res) => {
   try {
     let user = req.user;
     let id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "Invalid product ID" });
+    }
     let product = await Product.findById(id);
-    if (!product) res.status(404).json({ msg: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
     if (
       user &&
       user.role === "vendor" &&
@@ -79,7 +88,9 @@ const readSingleProductController = async (req, res) => {
         .status(403)
         .json({ msg: "Not authorized to view this product" });
     }
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({ msg: error.message });
+  }
 };
 
 // UPDATE PRODUCTS
@@ -87,7 +98,8 @@ const updateProductsController = async (req, res) => {
   try {
     const user = req.user;
     const id = req.params.id;
-    const body = req.body;
+    const body = req.body;    
+    
     if (user.role !== "vendor") {
       return res.status(403).json({ msg: "Only Vendors can update products" });
     }
@@ -122,12 +134,12 @@ const deleteProductsController = async (req, res) => {
       user.role === "admin"
     ) {
       const deleted = await Product.findByIdAndDelete(id);
-      res.status(202).json(deleted);
+      return res.status(202).json(deleted);
     } else {
-      res.status(403).json({ msg: "Action forbidden" });
+      return res.status(403).json({ msg: "Action forbidden" });
     }
   } catch (error) {
-    res.status(500).json({ msg: error.message });
+    return res.status(500).json({ msg: error.message });
   }
 };
 
@@ -136,5 +148,5 @@ module.exports = {
   readProductsController,
   updateProductsController,
   deleteProductsController,
-  readSingleProductController
+  readSingleProductController,
 };
